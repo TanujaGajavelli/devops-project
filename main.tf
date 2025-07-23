@@ -287,7 +287,7 @@ resource "aws_iam_role_policy_attachment" "attach_logging_policy_to_codebuild" {
   policy_arn = aws_iam_policy.codebuild_logging_policy.arn
 }
 
-
+#Codebuild s3 policy
 resource "aws_iam_policy" "codebuild_s3_policy" {
   name = "codebuild-s3-access"
 
@@ -299,7 +299,8 @@ resource "aws_iam_policy" "codebuild_s3_policy" {
         Action = [
           "s3:GetObject",
           "s3:GetObjectVersion",
-          "s3:GetBucketVersioning"
+          "s3:GetBucketVersioning",
+          "s3:PutObject"
         ],
         Resource = [
           "arn:aws:s3:::my-bucket-awsproject-tanujasai",
@@ -313,4 +314,75 @@ resource "aws_iam_policy" "codebuild_s3_policy" {
 resource "aws_iam_role_policy_attachment" "attach_s3_policy_to_codebuild" {
   role       = aws_iam_role.codebuild_role.name
   policy_arn = aws_iam_policy.codebuild_s3_policy.arn
+}
+
+#CodeDeploy policy
+resource "aws_iam_policy" "codepipeline_codedeploy_policy"{
+  name ="codepipeline-codedeploy-access"
+
+  policy=jsonencode({
+    Version="2012-10-17",
+    Statement=[
+      {
+        Effect="Allow",
+        Action = [
+          "codedeploy:CreateDeployment",
+          "codedeploy:GetDeployment",
+          "codedeploy:GetDeploymentConfig"
+        ],
+        Resource="*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_codedeploy_policy_to_codepipeline" {
+  role= aws_iam_role.codepipeline_role.name
+  policy_arn= aws_iam_policy.codepipeline_codedeploy_policy.arn
+}
+
+
+resource "aws_iam_policy" "codepipeline_codedeploy_register_policy" {
+  name = "codepipeline-codedeploy-register-revision"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codedeploy:RegisterApplicationRevision"
+        ],
+        Resource = aws_codedeploy_app.my_app.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_register_revision_policy" {
+  role       = aws_iam_role.codepipeline_role.name
+  policy_arn = aws_iam_policy.codepipeline_codedeploy_register_policy.arn
+}
+
+
+resource "aws_iam_policy" "codepipeline_codedeploy_extra_policy" {
+  name = "codepipeline-codedeploy-get-revision"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codedeploy:GetApplicationRevision"
+        ],
+        Resource = aws_codedeploy_app.my_app.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_get_revision_policy" {
+  role       = aws_iam_role.codepipeline_role.name
+  policy_arn = aws_iam_policy.codepipeline_codedeploy_extra_policy.arn
 }
