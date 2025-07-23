@@ -17,6 +17,35 @@ resource "aws_iam_role" "codepipeline_role"{
   })
 }
 
+resource "aws_iam_policy" "codepipeline_s3_policy" {
+  name = "codepipeline-s3-access"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketVersioning"
+        ],
+        Resource = [
+          "arn:aws:s3:::my-bucket-awsproject-tanujasai",
+          "arn:aws:s3:::my-bucket-awsproject-tanujasai/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
+  role       = aws_iam_role.codepipeline_role.name
+  policy_arn = aws_iam_policy.codepipeline_s3_policy.arn
+}
+
+
 resource "aws_iam_role_policy_attachment" "codepipeline_policy_attach"{
   role=aws_iam_role.codepipeline_role.name
   policy_arn="arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess"
@@ -207,4 +236,81 @@ resource "aws_codepipeline" "codepipeline"{
       }
     }
   }
+}
+
+
+resource "aws_iam_policy" "codepipeline_codebuild_policy" {
+  name = "codepipeline-start-codebuild"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "codebuild:StartBuild",
+          "codebuild:BatchGetBuilds"
+        ],
+        Resource = aws_codebuild_project.codebuild.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_codebuild_policy" {
+  role       = aws_iam_role.codepipeline_role.name
+  policy_arn = aws_iam_policy.codepipeline_codebuild_policy.arn
+}
+
+
+resource "aws_iam_policy" "codebuild_logging_policy" {
+  name = "codebuild-cloudwatch-logging"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_logging_policy_to_codebuild" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = aws_iam_policy.codebuild_logging_policy.arn
+}
+
+
+resource "aws_iam_policy" "codebuild_s3_policy" {
+  name = "codebuild-s3-access"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:GetBucketVersioning"
+        ],
+        Resource = [
+          "arn:aws:s3:::my-bucket-awsproject-tanujasai",
+          "arn:aws:s3:::my-bucket-awsproject-tanujasai/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_s3_policy_to_codebuild" {
+  role       = aws_iam_role.codebuild_role.name
+  policy_arn = aws_iam_policy.codebuild_s3_policy.arn
 }
